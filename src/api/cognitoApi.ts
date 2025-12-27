@@ -1,5 +1,5 @@
-import { appActions, AwsCredentials } from "@/features/appSlice";
-import { AppSetting, setSetting, setToken } from "@/store";
+import { AwsCredentials } from "@/features/authSlice";
+import { CognitoSetting } from "@/features/settingSlice";
 import {
   CognitoIdentityProviderClient,
   GetTokensFromRefreshTokenCommand,
@@ -9,12 +9,12 @@ import { fromCognitoIdentityPool } from "@aws-sdk/credential-providers";
 import { createApi, fakeBaseQuery } from "@reduxjs/toolkit/query/react";
 
 type LoginArg = {
-  setting: AppSetting;
+  cognitoSetting: CognitoSetting;
   username: string;
   password: string;
 };
 type RefreshArg = {
-  setting: AppSetting;
+  cognitoSetting: CognitoSetting;
   refreshToken: string;
 };
 
@@ -29,11 +29,12 @@ export const cognitoApi = createApi({
       },
       LoginArg
     >({
-      queryFn: async ({
-        setting: { region, clientId, identityPoolId, userPoolId },
-        username,
-        password,
-      }: LoginArg) => {
+      queryFn: async (arg: LoginArg) => {
+        const {
+          cognitoSetting: { region, clientId, identityPoolId, userPoolId },
+          username,
+          password,
+        } = arg;
         const cognitoClient = new CognitoIdentityProviderClient({
           region: region,
         });
@@ -72,27 +73,11 @@ export const cognitoApi = createApi({
             },
           };
         } catch (error) {
+          console.log(error);
+
           return {
-            error,
+            error: "Failed to login.",
           };
-        }
-      },
-      async onQueryStarted(arg, { dispatch, queryFulfilled }) {
-        try {
-          const { data } = await queryFulfilled;
-
-          dispatch(
-            appActions.setAppState({
-              setting: arg.setting,
-              refreshToken: data.refreshToken,
-              awsCredentials: data.credentials,
-            })
-          );
-
-          await setToken(data.refreshToken);
-          await setSetting(arg.setting);
-        } catch (error) {
-          dispatch(appActions.logout());
         }
       },
     }),
@@ -103,10 +88,11 @@ export const cognitoApi = createApi({
       },
       RefreshArg
     >({
-      queryFn: async ({
-        setting: { region, clientId, identityPoolId, userPoolId },
-        refreshToken,
-      }: RefreshArg) => {
+      queryFn: async (arg: RefreshArg) => {
+        const {
+          cognitoSetting: { region, clientId, identityPoolId, userPoolId },
+          refreshToken,
+        } = arg;
         const cognitoClient = new CognitoIdentityProviderClient({
           region: region,
         });
@@ -145,24 +131,6 @@ export const cognitoApi = createApi({
           return {
             error,
           };
-        }
-      },
-      async onQueryStarted(arg, { dispatch, queryFulfilled }) {
-        try {
-          const { data } = await queryFulfilled;
-
-          dispatch(
-            appActions.setAppState({
-              setting: arg.setting,
-              refreshToken: data.refreshToken,
-              awsCredentials: data.credentials,
-            })
-          );
-
-          await setToken(data.refreshToken);
-          await setSetting(arg.setting);
-        } catch (error) {
-          dispatch(appActions.logout());
         }
       },
     }),

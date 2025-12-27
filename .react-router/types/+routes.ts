@@ -14,9 +14,6 @@ type Pages = {
   "/": {
     params: {};
   };
-  "/login": {
-    params: {};
-  };
   "/transfer": {
     params: {};
   };
@@ -28,11 +25,7 @@ type Pages = {
 type RouteFiles = {
   "root.tsx": {
     id: "root";
-    page: "/" | "/login" | "/transfer" | "/setting";
-  };
-  "routes/login.tsx": {
-    id: "routes/login";
-    page: "/login";
+    page: "/" | "/transfer" | "/setting";
   };
   "routes/sidebar.tsx": {
     id: "routes/sidebar";
@@ -54,7 +47,6 @@ type RouteFiles = {
 
 type RouteModules = {
   "root": typeof import("./src/root.tsx");
-  "routes/login": typeof import("./src/routes/login.tsx");
   "routes/sidebar": typeof import("./src/routes/sidebar.tsx");
   "routes/home": typeof import("./src/routes/home.tsx");
   "routes/transfer": typeof import("./src/routes/transfer.tsx");

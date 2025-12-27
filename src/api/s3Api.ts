@@ -7,7 +7,6 @@ import {
 } from "@aws-sdk/client-s3";
 import { createApi, fakeBaseQuery } from "@reduxjs/toolkit/query/react";
 import { withReauth } from "./utils";
-import { AwsCredentials } from "@/features/appSlice";
 import { S3Action } from "@/features/s3Slice";
 import { invoke } from "@tauri-apps/api/core";
 import { formatLocalDate } from "@/lib/utils";
@@ -31,53 +30,33 @@ export type UploadObjectArgs = {
   folder: string;
 };
 
-function getStateInfo(): {
-  creds: AwsCredentials;
-  region: string;
-} {
-  const state = store.getState().app;
-
-  const creds = state.awsCredentials!;
-  const region = state.setting?.region!;
-
-  return {
-    creds,
-    region,
-  };
-}
-
-function createS3ClientAndPrefix(): {
-  client: S3Client;
-  folderPrefix: string;
-} {
-  const { creds, region } = getStateInfo();
-
-  const client = new S3Client({
-    region,
-    credentials: {
-      ...creds,
-    },
-  });
-
-  return {
-    client,
-    folderPrefix: `private/${creds.identityId}`,
-  };
-}
-
-const bucket = "s3-app-1234";
-
 export const s3Api = createApi({
   reducerPath: "s3Api",
   baseQuery: fakeBaseQuery(),
   endpoints: (builder) => ({
     listContents: builder.query<Content[], string>({
       queryFn: withReauth<Content[], string>(async (folder) => {
-        const { client, folderPrefix } = createS3ClientAndPrefix();
+        const auth = store.getState().auth;
+        const setting = store.getState().setting;
+
+        if (!auth.awsCredentials || !setting.cognitoSetting) {
+          return { error: "not-authenticated" };
+        }
+
+        const client = new S3Client({
+          region: setting.cognitoSetting.region,
+          credentials: {
+            ...auth.awsCredentials,
+          },
+        });
+
+        const { identityId } = auth.awsCredentials;
+        const folderPrefix = `private/${identityId}`;
+
         const prefix = `${folderPrefix}${folder}`;
 
         const command = new ListObjectsV2Command({
-          Bucket: bucket,
+          Bucket: setting.cognitoSetting.bucket,
           Prefix: prefix,
           Delimiter: "/",
         });
@@ -129,11 +108,26 @@ export const s3Api = createApi({
     }),
     createFolder: builder.mutation<string, string>({
       queryFn: withReauth<string, string>(async (folder) => {
-        const { client, folderPrefix } = createS3ClientAndPrefix();
+        const auth = store.getState().auth;
+        const setting = store.getState().setting;
+
+        if (!auth.awsCredentials || !setting.cognitoSetting) {
+          return { error: "not-authenticated" };
+        }
+
+        const client = new S3Client({
+          region: setting.cognitoSetting.region,
+          credentials: {
+            ...auth.awsCredentials,
+          },
+        });
+
+        const { identityId } = auth.awsCredentials;
+        const folderPrefix = `private/${identityId}`;
         const prefix = `${folderPrefix}${folder}`;
 
         const command = new PutObjectCommand({
-          Bucket: bucket,
+          Bucket: setting.cognitoSetting.bucket,
           Key: prefix,
         });
         try {
@@ -151,12 +145,18 @@ export const s3Api = createApi({
     }),
     uploadObject: builder.mutation<null, UploadObjectArgs>({
       queryFn: withReauth<null, UploadObjectArgs>(async (args) => {
-        const { creds, region } = getStateInfo();
+        const auth = store.getState().auth;
+        const setting = store.getState().setting;
+
+        if (!auth.awsCredentials || !setting.cognitoSetting) {
+          return { error: "not-authenticated" };
+        }
+        const creds = auth.awsCredentials;
 
         await invoke("upload_file_multipart", {
           filePath: args.filePath,
-          region,
-          bucket,
+          region: setting.cognitoSetting.region,
+          bucket: setting.cognitoSetting.bucket,
           creds: {
             access_key_id: creds.accessKeyId,
             secret_access_key: creds.secretAccessKey,

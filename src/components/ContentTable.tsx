@@ -17,31 +17,32 @@ import { Content, useListContentsQuery } from "@/api/s3Api";
 import { Button } from "./ui/button";
 import { File, Folder } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "@/hook";
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { S3Action } from "@/features/s3Slice";
 import { getFileType, getSize } from "@/lib/utils";
 import { Checkbox } from "./ui/checkbox";
 
+const defaultData: Content[] = [];
+
 export default function ContentTable() {
   const folder = useAppSelector((state) => state.s3.folder);
-  const { data, isFetching } = useListContentsQuery(folder);
+  const { data, isFetching, error } = useListContentsQuery(folder);
 
   const dispatch = useAppDispatch();
 
-  const columns = useMemo(
-    () =>
-      createColumn({
-        onFolderClick: (prefix) => {
-          console.log("folder + prefix", folder, prefix);
+  const onFolderClick = useCallback((prefix: string) => {
+    console.log("folder + prefix", folder, prefix);
 
-          dispatch(S3Action.setFolder(folder + prefix));
-        },
-      }),
-    [folder, dispatch]
+    dispatch(S3Action.setFolder(folder + prefix));
+  }, []);
+
+  const columns = useMemo(
+    () => createColumn({ onFolderClick }),
+    [onFolderClick]
   );
 
   const table = useReactTable({
-    data: data ?? [],
+    data: data ?? defaultData,
     columns,
     getCoreRowModel: getCoreRowModel(),
   });
@@ -67,7 +68,13 @@ export default function ContentTable() {
         ))}
       </TableHeader>
       <TableBody>
-        {isFetching ? (
+        {error !== undefined ? (
+          <TableRow>
+            <TableCell colSpan={columns.length} className="h-24 text-center">
+              Please login.
+            </TableCell>
+          </TableRow>
+        ) : isFetching ? (
           <></>
         ) : table.getRowModel().rows?.length ? (
           table.getRowModel().rows.map((row) => (
@@ -100,16 +107,20 @@ function createColumn(props: {
   return [
     {
       id: "select",
-      header: ({ table }) => (
-        <Checkbox
-          checked={
-            table.getIsAllRowsSelected() ||
-            (table.getIsSomePageRowsSelected() && "indeterminate")
-          }
-          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-          aria-label="Select all"
-        />
-      ),
+      header: ({ table }) => {
+        return (
+          <Checkbox
+            checked={
+              table.getIsAllRowsSelected() ||
+              (table.getIsSomePageRowsSelected() && "indeterminate")
+            }
+            onCheckedChange={(value) =>
+              table.toggleAllPageRowsSelected(!!value)
+            }
+            aria-label="Select all"
+          />
+        );
+      },
       cell: ({ row }) => (
         <Checkbox
           checked={row.getIsSelected()}

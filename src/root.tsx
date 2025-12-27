@@ -12,9 +12,11 @@ import { Provider } from "react-redux";
 import type { Route } from "./+types/root";
 import "./app.css";
 import LoadingScreen from "./components/LoadingScreen";
-import { getSetting, getToken, initTauriStore, store } from "./store";
-import { cognitoApi } from "./api/cognitoApi";
+import { appStore, initTauriStore, store } from "./store";
 import { Toaster } from "sonner";
+import { Setting } from "./features/settingSlice";
+import { cognitoApi } from "./api/cognitoApi";
+import { authActions } from "./features/authSlice";
 
 let appInit: boolean = false;
 
@@ -22,25 +24,28 @@ export async function clientLoader() {
   if (!appInit) {
     appInit = true;
     await initTauriStore();
-    const token = await getToken();
-    const setting = await getSetting();
+    const setting = await appStore.get<Setting>("setting");
+    const token = await appStore.get<string>("token");
+    console.log(setting);
 
-    if (!token || !setting) {
-      return redirect("/login");
+    if (setting?.cognitoSetting === undefined || token === undefined) {
+      return redirect("/setting");
     }
 
     try {
-      await store
+      const response = await store
         .dispatch(
           cognitoApi.endpoints.refresh.initiate({
-            setting,
+            cognitoSetting: setting.cognitoSetting,
             refreshToken: token,
           })
         )
         .unwrap();
+      store.dispatch(authActions.setAwsCredentials(response.credentials));
+      store.dispatch(authActions.setToken(response.refreshToken));
     } catch (error) {
       console.error(error);
-      return redirect("/login");
+      return redirect("/setting");
     }
   }
 }
@@ -58,7 +63,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         {children}
         <ScrollRestoration />
         <Scripts />
-        <Toaster />
+        <Toaster position="top-right" />
       </body>
     </html>
   );

@@ -1,15 +1,33 @@
 import { load, type Store } from "@tauri-apps/plugin-store";
 
-import { configureStore } from "@reduxjs/toolkit";
-import { appSlice } from "./features/appSlice";
+import { configureStore, createListenerMiddleware } from "@reduxjs/toolkit";
 import { s3Slice } from "./features/s3Slice";
 import { cognitoApi } from "./api/cognitoApi";
 import { s3Api } from "./api/s3Api";
 import { transferSlice } from "./features/transferSlice";
+import { settingActions, settingSlice } from "./features/settingSlice";
+import { authSlice } from "./features/authSlice";
+
+const listenerMiddleware = createListenerMiddleware();
+listenerMiddleware.startListening({
+  actionCreator: settingActions.setSetting,
+  effect: async (action) => {
+    await appStore.set("setting", action.payload);
+    await appStore.save();
+  },
+});
+listenerMiddleware.startListening({
+  actionCreator: authSlice.actions.setToken,
+  effect: async (action) => {
+    await appStore.set("token", action.payload);
+    await appStore.save();
+  },
+});
 
 export const store = configureStore({
   reducer: {
-    app: appSlice.reducer,
+    auth: authSlice.reducer,
+    setting: settingSlice.reducer,
     s3: s3Slice.reducer,
     transfer: transferSlice.reducer,
     [cognitoApi.reducerPath]: cognitoApi.reducer,
@@ -17,6 +35,7 @@ export const store = configureStore({
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware()
+      .prepend(listenerMiddleware.middleware)
       .concat(cognitoApi.middleware)
       .concat(s3Api.middleware),
 });
@@ -24,33 +43,8 @@ export const store = configureStore({
 export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;
 
-export var tauriStore: Store;
-
-export interface AppSetting {
-  region: string;
-  clientId: string;
-  userPoolId: string;
-  identityPoolId: string;
-}
+export var appStore: Store;
 
 export async function initTauriStore() {
-  tauriStore = await load("store.json");
-}
-
-export async function getSetting() {
-  return tauriStore.get<AppSetting>("setting");
-}
-
-export async function setSetting(setting: AppSetting) {
-  await tauriStore.set("setting", setting);
-  await tauriStore.save();
-}
-
-export async function getToken() {
-  return tauriStore.get<string>("token");
-}
-
-export async function setToken(token: string) {
-  await tauriStore.set("token", token);
-  await tauriStore.save();
+  appStore = await load("store.json");
 }

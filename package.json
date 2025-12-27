@@ -1,5 +1,5 @@
 {
-  "name": "s3-file-app",
+  "name": "s3-transfer",
   "private": true,
   "version": "0.1.0",
   "type": "module",

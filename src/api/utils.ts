@@ -2,6 +2,7 @@ import { store } from "@/store";
 import { _NEVER, BaseQueryApi } from "@reduxjs/toolkit/query";
 import { Mutex } from "async-mutex";
 import { cognitoApi } from "./cognitoApi";
+import { toast } from "sonner";
 
 const mutex = new Mutex();
 
@@ -23,10 +24,19 @@ export const withReauth = <Result, QueryArg>(
         const release = await mutex.acquire();
 
         try {
-          const state = store.getState().app;
+          const state = store.getState().auth;
+          const setting = store.getState().setting;
+          if (
+            !state.refreshToken ||
+            !state.awsCredentials ||
+            !setting.cognitoSetting
+          ) {
+            toast.warning("Please log in again.");
+            return { error: "not-authenticated" };
+          }
           await store.dispatch(
             cognitoApi.endpoints.refresh.initiate({
-              setting: state.setting!,
+              cognitoSetting: setting.cognitoSetting,
               refreshToken: state.refreshToken!,
             })
           );
