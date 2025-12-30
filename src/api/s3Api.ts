@@ -38,7 +38,6 @@ export const s3Api = createApi({
       queryFn: withReauth<Content[], string>(async (folder) => {
         const auth = store.getState().auth;
         const setting = store.getState().setting;
-        console.log(auth, setting);
 
         if (!auth.awsCredentials || !setting.cognitoSetting) {
           return { error: "not-authenticated" };
