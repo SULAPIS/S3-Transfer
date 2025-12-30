@@ -8,19 +8,27 @@ interface Props {
   to: string;
   Icon: LucideIcon;
   count?: number;
+  className?: string;
 }
 
-export default function SidebarNavLink({ children, to, Icon, count }: Props) {
+export default function SidebarNavLink({
+  className,
+  children,
+  to,
+  Icon,
+  count,
+}: Props) {
   return (
     <NavLink
       className={({ isActive, isPending }) =>
         cn(
-          " relative  rounded-xl flex flex-col text-[10px] items-center justify-center w-14 h-14 transition-colors",
+          "relative rounded-xl flex flex-col text-[10px] items-center justify-center w-14 h-14 transition-colors",
           isActive
             ? "bg-primary text-primary-foreground"
             : isPending
             ? "bg-gray-100/50"
-            : "hover:bg-accent"
+            : "hover:bg-accent",
+          className
         )
       }
       to={to}

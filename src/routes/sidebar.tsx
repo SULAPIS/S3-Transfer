@@ -18,7 +18,7 @@ export default function SidebarLayout() {
 
   return (
     <div className="flex h-full">
-      <nav className="w-18 border-r-2 flex flex-col items-center gap-2 pt-4">
+      <nav className="w-18 border-r-2 flex flex-col items-center gap-2 py-4">
         <SidebarNavLink to={`/`} Icon={Cloud}>
           Home
         </SidebarNavLink>
@@ -31,7 +31,7 @@ export default function SidebarLayout() {
           Transfer
         </SidebarNavLink>
 
-        <SidebarNavLink to={`/setting`} Icon={Settings}>
+        <SidebarNavLink className="mt-auto" to={`/setting`} Icon={Settings}>
           Setting
         </SidebarNavLink>
       </nav>
