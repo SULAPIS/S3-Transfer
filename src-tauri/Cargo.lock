@@ -4088,6 +4088,7 @@ dependencies = [
  "aws-config",
  "aws-sdk-s3",
  "aws-smithy-types",
+ "dirs",
  "reqwest",
  "serde",
  "serde_json",

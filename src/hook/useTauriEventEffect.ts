@@ -44,8 +44,6 @@ export function uploadProgressHandler(
   payload: UploadProgressPayload,
   dispatch: AppDispatch
 ) {
-  console.log(payload);
-
   switch (payload.event_type) {
     case "Start":
       dispatch(

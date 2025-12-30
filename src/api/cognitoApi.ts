@@ -35,18 +35,18 @@ export const cognitoApi = createApi({
           username,
           password,
         } = arg;
-        const cognitoClient = new CognitoIdentityProviderClient({
-          region: region,
-        });
-        const command = new InitiateAuthCommand({
-          AuthFlow: "USER_PASSWORD_AUTH",
-          ClientId: clientId,
-          AuthParameters: {
-            USERNAME: username,
-            PASSWORD: password,
-          },
-        });
         try {
+          const cognitoClient = new CognitoIdentityProviderClient({
+            region: region,
+          });
+          const command = new InitiateAuthCommand({
+            AuthFlow: "USER_PASSWORD_AUTH",
+            ClientId: clientId,
+            AuthParameters: {
+              USERNAME: username,
+              PASSWORD: password,
+            },
+          });
           const response = await cognitoClient.send(command);
           if (!response.AuthenticationResult) {
             return { error: "failed-login" };
@@ -73,10 +73,10 @@ export const cognitoApi = createApi({
             },
           };
         } catch (error) {
-          console.log(error);
+          console.error(error);
 
           return {
-            error: "Failed to login.",
+            error: "failed-login",
           };
         }
       },
@@ -93,14 +93,14 @@ export const cognitoApi = createApi({
           cognitoSetting: { region, clientId, identityPoolId, userPoolId },
           refreshToken,
         } = arg;
-        const cognitoClient = new CognitoIdentityProviderClient({
-          region: region,
-        });
-        const command = {
-          RefreshToken: refreshToken,
-          ClientId: clientId,
-        };
         try {
+          const cognitoClient = new CognitoIdentityProviderClient({
+            region: region,
+          });
+          const command = {
+            RefreshToken: refreshToken,
+            ClientId: clientId,
+          };
           const response = await cognitoClient.send(
             new GetTokensFromRefreshTokenCommand(command)
           );

@@ -16,8 +16,11 @@ export const settingSlice = createSlice({
   name: "setting",
   initialState: {} as Setting,
   reducers: {
-    setSetting: (_, action: PayloadAction<Required<Setting>>) => {
-      return action.payload;
+    setCognitoSetting: (state, action: PayloadAction<CognitoSetting>) => {
+      state.cognitoSetting = action.payload;
+    },
+    setDownloadPath: (state, action: PayloadAction<string>) => {
+      state.downloadPath = action.payload;
     },
   },
 });

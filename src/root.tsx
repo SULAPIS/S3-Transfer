@@ -14,9 +14,10 @@ import "./app.css";
 import LoadingScreen from "./components/LoadingScreen";
 import { appStore, initTauriStore, store } from "./store";
 import { Toaster } from "sonner";
-import { Setting } from "./features/settingSlice";
+import { Setting, settingActions } from "./features/settingSlice";
 import { cognitoApi } from "./api/cognitoApi";
 import { authActions } from "./features/authSlice";
+import { invoke } from "@tauri-apps/api/core";
 
 let appInit: boolean = false;
 
@@ -25,18 +26,31 @@ export async function clientLoader() {
     appInit = true;
     await initTauriStore();
     const setting = await appStore.get<Setting>("setting");
-    const token = await appStore.get<string>("token");
-    console.log(setting);
 
-    if (setting?.cognitoSetting === undefined || token === undefined) {
+    if (setting === undefined) {
       return redirect("/setting");
     }
+    let { cognitoSetting, downloadPath } = setting;
 
+    const token = await appStore.get<string>("token");
+
+    if (downloadPath === undefined) {
+      downloadPath = await invoke<string | undefined>("get_download_dir");
+    }
+    if (downloadPath !== undefined) {
+      store.dispatch(settingActions.setDownloadPath(downloadPath));
+    }
+
+    if (cognitoSetting === undefined || token === undefined) {
+      return redirect("/setting");
+    } else {
+      store.dispatch(settingActions.setCognitoSetting(cognitoSetting));
+    }
     try {
       const response = await store
         .dispatch(
           cognitoApi.endpoints.refresh.initiate({
-            cognitoSetting: setting.cognitoSetting,
+            cognitoSetting,
             refreshToken: token,
           })
         )

@@ -1,37 +1,36 @@
-import { FormSchemaType } from "@/routes/setting";
-import { Control, Controller } from "react-hook-form";
 import { Field, FieldLabel } from "../ui/field";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
+import { useAppDispatch, useAppSelector } from "@/hook";
+import { open } from "@tauri-apps/plugin-dialog";
+import { settingActions } from "@/features/settingSlice";
 
-interface Props {
-  control: Control<FormSchemaType>;
-}
+export default function TransferSetting() {
+  const dispatch = useAppDispatch();
+  const downloadPath = useAppSelector((state) => state.setting.downloadPath);
 
-export default function TransferSetting({ control }: Props) {
   return (
     <div className="flex flex-col">
-      <Controller
-        name="downloadPath"
-        control={control}
-        render={({ field, fieldState }) => (
-          <Field orientation={"horizontal"} data-invalid={fieldState.invalid}>
-            <FieldLabel className="whitespace-nowrap" htmlFor="downloadPath">
-              Download Path
-            </FieldLabel>
-            <Input
-              {...field}
-              autoCapitalize="off"
-              autoComplete="off"
-              autoCorrect="off"
-              id="downloadPath"
-              aria-invalid={fieldState.invalid}
-              placeholder="/Download"
-            />
-            <Button variant={"secondary"}>Browse</Button>
-          </Field>
-        )}
-      />
+      <Field orientation={"horizontal"}>
+        <FieldLabel className="whitespace-nowrap" htmlFor="downloadPath">
+          Download Path
+        </FieldLabel>
+        <Input id="downloadPath" value={downloadPath} disabled />
+        <Button
+          variant={"secondary"}
+          onClick={async () => {
+            const newDownloadPath = await open({
+              directory: true,
+              defaultPath: downloadPath,
+            });
+            if (newDownloadPath !== null) {
+              dispatch(settingActions.setDownloadPath(newDownloadPath));
+            }
+          }}
+        >
+          Browse
+        </Button>
+      </Field>
     </div>
   );
 }

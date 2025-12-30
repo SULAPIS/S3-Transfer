@@ -1,6 +1,10 @@
 import { load, type Store } from "@tauri-apps/plugin-store";
 
-import { configureStore, createListenerMiddleware } from "@reduxjs/toolkit";
+import {
+  configureStore,
+  createListenerMiddleware,
+  isAnyOf,
+} from "@reduxjs/toolkit";
 import { s3Slice } from "./features/s3Slice";
 import { cognitoApi } from "./api/cognitoApi";
 import { s3Api } from "./api/s3Api";
@@ -10,9 +14,12 @@ import { authSlice } from "./features/authSlice";
 
 const listenerMiddleware = createListenerMiddleware();
 listenerMiddleware.startListening({
-  actionCreator: settingActions.setSetting,
-  effect: async (action) => {
-    await appStore.set("setting", action.payload);
+  matcher: isAnyOf(
+    settingActions.setDownloadPath,
+    settingActions.setCognitoSetting
+  ),
+  effect: async () => {
+    await appStore.set("setting", store.getState().setting);
     await appStore.save();
   },
 });

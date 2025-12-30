@@ -15,8 +15,8 @@ export const authSlice = createSlice({
   name: "auth",
   initialState: {} as AuthState,
   reducers: {
-    setToken: (_, action: PayloadAction<string>) => {
-      return { refreshToken: action.payload };
+    setToken: (state, action: PayloadAction<string>) => {
+      state.refreshToken = action.payload;
     },
     setAwsCredentials: (state, action: PayloadAction<AwsCredentials>) => {
       state.awsCredentials = action.payload;

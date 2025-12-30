@@ -31,8 +31,6 @@ export default function ContentTable() {
   const dispatch = useAppDispatch();
 
   const onFolderClick = useCallback((prefix: string) => {
-    console.log("folder + prefix", folder, prefix);
-
     dispatch(S3Action.setFolder(folder + prefix));
   }, []);
 
